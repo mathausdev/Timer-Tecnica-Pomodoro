@@ -1,52 +1,89 @@
 import tkinter as tk
 import time
-import threading
 
-class Timer:
+
+class TimerApp:
     def __init__(self, master):
         self.master = master
-        self.master.title("Timer")
-        self.master.geometry("300x200")
-        self.master.resizable(False, False)
-        
-        self.label1 = tk.Label(self.master, text="Enter time in minutes:")
-        self.label1.pack(pady=10)
-        self.entry = tk.Entry(self.master, width=10)
-        self.entry.pack(pady=10)
-        
-        self.button = tk.Button(self.master, text="Start Timer", command=self.start_timer)
-        self.button.pack(pady=10)
-        
-        self.label2 = tk.Label(self.master, text="")
-        self.label2.pack(pady=10)
-        
-        self.label3 = tk.Label(self.master, text="")
-        self.label3.pack(pady=10)
+        master.title("Timer")
+
+        self.timer_running = False
+        self.time_left = 0
+
+        # Create widgets
+        self.title_label = tk.Label(master, text="mathausdev", font=("Arial", 10))
+        self.title_label.pack()
+
+        self.timer_label = tk.Label(master, text="00:00:00", font=("Arial", 50))
+        self.timer_label.pack()
+
+        self.time_entry_label = tk.Label(master, text="Enter time (in minutes):")
+        self.time_entry_label.pack()
+
+        self.time_entry = tk.Entry(master)
+        self.time_entry.pack()
+
+        self.name_entry_label = tk.Label(master, text="Enter name:")
+        self.name_entry_label.pack()
+
+        self.name_entry = tk.Entry(master)
+        self.name_entry.pack()
+
+        self.start_button = tk.Button(master, text="Start", command=self.start_timer)
+        self.start_button.pack()
+
+        # Bind the window's protocol "WM_DELETE_WINDOW" to the quit function
+        master.protocol("WM_DELETE_WINDOW", self.quit)
 
     def start_timer(self):
-        try:
-            time_in_minutes = int(self.entry.get())
-            self.button.config(state=tk.DISABLED)
-            threading.Thread(target=self.countdown, args=(time_in_minutes,)).start()
-        except ValueError:
-            self.label2.config(text="Invalid input. Please enter a valid integer.", fg="red")
-            
-    def countdown(self, time_in_minutes):
-        start_time = time.time()
-        end_time = start_time + (time_in_minutes * 60)
-        while time.time() < end_time:
-            remaining_time = int(end_time - time.time())
-            mins, secs = divmod(remaining_time, 60)
-            time_format = '{:02d}:{:02d}'.format(mins, secs)
-            self.label2.config(text=f"Time Remaining: {time_format}")
-            time.sleep(1)
-        self.label2.config(text="Time's up!", fg="red")
-        self.button.config(state=tk.NORMAL)
+        if not self.timer_running:
+            self.timer_running = True
+            minutes = int(self.time_entry.get())
+            seconds = minutes * 60
+            self.time_left = seconds
 
-def main():
-    root = tk.Tk()
-    timer = Timer(root)
-    root.mainloop()
+            self.name = self.name_entry.get()
+            self.master.title(self.name)
+
+            self.start_button.config(text="Pause", command=self.pause_timer)
+
+            self.countdown()
+
+    def countdown(self):
+        if self.timer_running:
+            hours = self.time_left // 3600
+            minutes = (self.time_left // 60) % 60
+            seconds = self.time_left % 60
+            self.timer_label.config(text=f"{hours:02}:{minutes:02}:{seconds:02}")
+
+            if self.time_left == 0:
+                self.timer_running = False
+                self.master.title("Timer")
+                self.start_button.config(text="Start", command=self.start_timer)
+                self.bring_to_front()
+
+            else:
+                self.time_left -= 1
+                self.master.after(1000, self.countdown)
+
+    def pause_timer(self):
+        self.timer_running = False
+        self.start_button.config(text="Resume", command=self.resume_timer)
+
+    def resume_timer(self):
+        self.timer_running = True
+        self.start_button.config(text="Pause", command=self.pause_timer)
+        self.countdown()
+
+    def bring_to_front(self):
+        self.master.attributes("-topmost", 1)
+        self.master.attributes("-topmost", 0)
+
+    def quit(self):
+        self.master.destroy()
+
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = TimerApp(root)
+    root.mainloop()
